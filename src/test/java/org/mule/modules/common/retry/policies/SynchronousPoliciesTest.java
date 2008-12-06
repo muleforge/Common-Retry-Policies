@@ -1,6 +1,7 @@
 package org.mule.modules.common.retry.policies;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import javax.annotation.Resource;
 
@@ -11,6 +12,7 @@ import org.mule.api.retry.RetryCallback;
 import org.mule.api.retry.RetryContext;
 import org.mule.api.retry.RetryPolicyTemplate;
 import org.mule.modules.common.retry.notifiers.RetryNotifierStub;
+import org.mule.retry.RetryPolicyExhaustedException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -21,17 +23,21 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @ContextConfiguration(locations = { "classpath:synchronous-policies-config.xml" })
 public class SynchronousPoliciesTest {
 
-    private static final int RETRIES_BEFORE_SUCCESS = 10;
-
     private static class EventuallySuccessfulRetryCallback implements
             RetryCallback {
 
+        private final int retriesBeforeSuccess;
+
         private int retryCount = 0;
+
+        EventuallySuccessfulRetryCallback(final int retriesBeforeSuccess) {
+            this.retriesBeforeSuccess = retriesBeforeSuccess;
+        }
 
         public void doWork(final RetryContext context) throws Exception {
             retryCount++;
 
-            if (retryCount <= RETRIES_BEFORE_SUCCESS) {
+            if (retryCount <= retriesBeforeSuccess) {
                 throw new Exception("Failed attempt #" + retryCount);
             }
         }
@@ -44,21 +50,57 @@ public class SynchronousPoliciesTest {
     @Resource
     private RetryPolicyTemplate foreverRetryPolicyTemplate;
 
-    private RetryCallback eventuallySuccessfulRetryCallback;
+    @Resource
+    private RetryPolicyTemplate exhaustingRetryPolicyTemplate;
 
     @Before
-    public void inialize() {
-        eventuallySuccessfulRetryCallback = new EventuallySuccessfulRetryCallback();
+    public void initializeRetryNotifier() {
+        foreverRetryPolicyTemplate.setNotifier(new RetryNotifierStub());
+        exhaustingRetryPolicyTemplate.setNotifier(new RetryNotifierStub());
     }
 
     @Test
     public void testForeverRetryPolicyTemplate() throws Exception {
-        foreverRetryPolicyTemplate.execute(eventuallySuccessfulRetryCallback);
+        foreverRetryPolicyTemplate
+                .execute(new EventuallySuccessfulRetryCallback(10));
 
-        assertEquals(1, ((RetryNotifierStub) foreverRetryPolicyTemplate
-                .getNotifier()).getSuccessCount());
+        final RetryNotifierStub retryNotifierStub = (RetryNotifierStub) foreverRetryPolicyTemplate
+                .getNotifier();
 
-        assertEquals(10, ((RetryNotifierStub) foreverRetryPolicyTemplate
-                .getNotifier()).getFailedCount());
+        assertEquals(1, retryNotifierStub.getSuccessCount());
+        assertEquals(10, retryNotifierStub.getFailedCount());
+    }
+
+    @Test
+    public void testExhaustingRetryPolicyTemplateWithoutSuccess()
+            throws Exception {
+
+        try {
+            exhaustingRetryPolicyTemplate
+                    .execute(new EventuallySuccessfulRetryCallback(10));
+
+            fail("Should have got a RetryPolicyExhaustedException");
+        } catch (final RetryPolicyExhaustedException rpee) {
+
+        }
+
+        final RetryNotifierStub retryNotifierStub = (RetryNotifierStub) exhaustingRetryPolicyTemplate
+                .getNotifier();
+
+        assertEquals(0, retryNotifierStub.getSuccessCount());
+        assertEquals(6, retryNotifierStub.getFailedCount());
+    }
+
+    @Test
+    public void testExhaustingRetryPolicyTemplateWithSuccess() throws Exception {
+
+        exhaustingRetryPolicyTemplate
+                .execute(new EventuallySuccessfulRetryCallback(3));
+
+        final RetryNotifierStub retryNotifierStub = (RetryNotifierStub) exhaustingRetryPolicyTemplate
+                .getNotifier();
+
+        assertEquals(1, retryNotifierStub.getSuccessCount());
+        assertEquals(3, retryNotifierStub.getFailedCount());
     }
 }
