@@ -1,11 +1,17 @@
 package org.mule.modules.common.retry.policies;
 
 import org.mule.api.retry.RetryPolicy;
-import org.mule.retry.policies.AbstractPolicyTemplate;
 
-public class ExhaustingRetryPolicyTemplate extends AbstractPolicyTemplate {
+public class ExhaustingRetryPolicyTemplate extends
+        AbstractSleepingPolicyTemplate {
+
+    private int retryLimit;
+
+    public void setRetryLimit(final int retryLimit) {
+        this.retryLimit = retryLimit;
+    }
 
     public RetryPolicy createRetryInstance() {
-        return new ExhaustingRetryPolicy();
+        return new ExhaustingRetryPolicy(getSleepTime(), retryLimit);
     }
 }
