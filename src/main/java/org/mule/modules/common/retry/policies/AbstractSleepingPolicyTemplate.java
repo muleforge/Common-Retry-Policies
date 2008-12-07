@@ -8,7 +8,7 @@ import org.mule.retry.policies.AbstractPolicyTemplate;
 public abstract class AbstractSleepingPolicyTemplate extends
         AbstractPolicyTemplate {
 
-    private long sleepTime;
+    private long sleepTime = 5000L;
 
     public void setSleepTime(final long sleepTime) {
         this.sleepTime = sleepTime;

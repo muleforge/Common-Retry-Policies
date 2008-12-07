@@ -5,7 +5,7 @@ import org.mule.api.retry.RetryPolicy;
 public class ExhaustingRetryPolicyTemplate extends
         AbstractSleepingPolicyTemplate {
 
-    private int retryLimit;
+    private int retryLimit = Integer.MAX_VALUE;
 
     public void setRetryLimit(final int retryLimit) {
         this.retryLimit = retryLimit;
