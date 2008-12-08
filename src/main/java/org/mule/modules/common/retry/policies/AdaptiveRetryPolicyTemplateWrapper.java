@@ -50,7 +50,20 @@ public class AdaptiveRetryPolicyTemplateWrapper implements RetryPolicyTemplate,
                         + callback);
             }
 
-            return delegate.execute(callback);
+            final RetryContext retryContext = delegate.execute(callback);
+
+            final String retryContextDescription = retryContext
+                    .getDescription();
+
+            if (logger.isDebugEnabled()) {
+                logger.debug("The synchronous retry policy has returned: "
+                        + retryContextDescription);
+            }
+
+            RetryContextUtil.recoverConnectables(muleContext, retryContext
+                    .getDescription());
+
+            return retryContext;
         }
 
         if (logger.isDebugEnabled()) {

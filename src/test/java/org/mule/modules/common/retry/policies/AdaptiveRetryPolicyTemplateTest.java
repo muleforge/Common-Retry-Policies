@@ -64,13 +64,37 @@ public class AdaptiveRetryPolicyTemplateTest {
         amqBroker.stop();
     }
 
-    private void waitForFullyConnectedConnector(final AbstractConnector connector)
-            throws InterruptedException {
+    @Test
+    public void jmsBrokerUpThenDownThenUp() throws Exception {
+        BrokerService amqBroker = newActiveMQBroker();
+        final MuleContext muleContext = newMuleServer();
+
+        final AbstractConnector connector = getJmsConnector(muleContext);
+
+        assertJmsConnectorFullyFunctional(muleContext, connector);
+
+        amqBroker.stop();
+        amqBroker.waitUntilStopped();
+        amqBroker = newActiveMQBroker();
+
+        System.err.println(amqBroker);
+
+        Thread.sleep(5000L);
+
+        waitForFullyConnectedConnector(connector);
+
+        assertJmsConnectorFullyFunctional(muleContext, connector);
+
+        muleContext.dispose();
+        amqBroker.stop();
+    }
+
+    private void waitForFullyConnectedConnector(
+            final AbstractConnector connector) throws InterruptedException {
 
         int i = 0;
 
-        while ((!isConnectorAndItsReceiversConnected(connector))
-                && (i++ < 1000)) {
+        while ((!isConnectorAndItsReceiversConnected(connector)) && (i++ < 60)) {
             Thread.sleep(500L);
         }
     }
@@ -164,7 +188,7 @@ public class AdaptiveRetryPolicyTemplateTest {
 
         int i = 0;
 
-        while ((testComponent.getReceivedMessages() == 0) && (i++ < 100)) {
+        while ((testComponent.getReceivedMessages() == 0) && (i++ < 60)) {
             Thread.sleep(500L);
         }
 
@@ -197,6 +221,8 @@ public class AdaptiveRetryPolicyTemplateTest {
     private BrokerService newActiveMQBroker() throws Exception {
         final BrokerService amqBroker = new BrokerService();
         amqBroker.setPersistent(false);
+        amqBroker.setUseJmx(false);
+        amqBroker.setUseShutdownHook(false);
         amqBroker.setDeleteAllMessagesOnStartup(true);
         amqBroker.setBrokerName(BROKER_ID);
         amqBroker.start();
