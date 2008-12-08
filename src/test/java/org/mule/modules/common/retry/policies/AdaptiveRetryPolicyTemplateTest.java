@@ -1,6 +1,7 @@
 package org.mule.modules.common.retry.policies;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Collections;
@@ -31,15 +32,78 @@ public class AdaptiveRetryPolicyTemplateTest {
     private static final String BROKER_ID = "crepol-broker";
 
     @Test
-    public void initialSynchronousConnection() throws Exception {
+    public void jmsBrokerAllUp() throws Exception {
         final BrokerService amqBroker = newActiveMQBroker();
         final MuleContext muleContext = newMuleServer();
 
-        final AbstractConnector connector = (AbstractConnector) muleContext
-                .getRegistry().lookupConnector("JmsConnector");
+        final AbstractConnector connector = getJmsConnector(muleContext);
+
+        assertJmsConnectorFullyFunctional(muleContext, connector);
+
+        muleContext.dispose();
+        amqBroker.stop();
+    }
+
+    @Test
+    public void jmsBrokerDownThenUp() throws Exception {
+        final MuleContext muleContext = newMuleServer();
+
+        final AbstractConnector connector = getJmsConnector(muleContext);
+
+        assertFalse("JmsConnector connected", connector.isConnected());
+        assertFalse("JmsConnector started",
+                isConnectorAndItsReceiversConnected(connector));
+
+        final BrokerService amqBroker = newActiveMQBroker();
+
+        waitForFullyConnectedConnector(connector);
+
+        assertJmsConnectorFullyFunctional(muleContext, connector);
+
+        muleContext.dispose();
+        amqBroker.stop();
+    }
+
+    private void waitForFullyConnectedConnector(final AbstractConnector connector)
+            throws InterruptedException {
+
+        int i = 0;
+
+        while ((!isConnectorAndItsReceiversConnected(connector))
+                && (i++ < 1000)) {
+            Thread.sleep(500L);
+        }
+    }
+
+    private boolean isConnectorAndItsReceiversConnected(
+            final AbstractConnector connector) {
+
+        if (!connector.isStarted()) {
+            return false;
+        }
+
+        if (!connector.isConnected()) {
+            return false;
+        }
+
+        for (final MessageReceiver messageReceiver : connector
+                .getReceivers("*")) {
+
+            if (!messageReceiver.isConnected()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private void assertJmsConnectorFullyFunctional(
+            final MuleContext muleContext, final AbstractConnector connector)
+            throws JMSException, Exception, InterruptedException, MuleException {
 
         assertTrue("JmsConnector connected", connector.isConnected());
-        assertTrue("JmsConnector started", connector.isStarted());
+        assertTrue("JmsConnector started",
+                isConnectorAndItsReceiversConnected(connector));
 
         assertAllMessageReceiversConnected(connector);
 
@@ -48,15 +112,19 @@ public class AdaptiveRetryPolicyTemplateTest {
 
         payload = sendMessageToQueueUsingMuleClient(muleContext);
         assertEquals(payload, waitForMessageInFunctionalComponent(muleContext));
+    }
 
-        muleContext.dispose();
-        amqBroker.stop();
+    private AbstractConnector getJmsConnector(final MuleContext muleContext) {
+        final AbstractConnector connector = (AbstractConnector) muleContext
+                .getRegistry().lookupConnector("JmsConnector");
+
+        return connector;
     }
 
     private String sendMessageToQueueUsingMuleClient(
             final MuleContext muleContext) throws MuleException {
-        String payload;
-        payload = RandomStringUtils.randomAlphanumeric(10);
+
+        final String payload = RandomStringUtils.randomAlphanumeric(10);
 
         new MuleClient(muleContext).dispatch("jms://" + QUEUE_NAME, payload,
                 Collections.EMPTY_MAP);
