@@ -3,12 +3,6 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<parent>
-		<groupId>org.mule</groupId>
-		<artifactId>mule</artifactId>
-		<version>2.1.1</version>
-	</parent>
-
 	<groupId>org.mule.modules</groupId>
 	<artifactId>commonretrypolicies</artifactId>
 	<name>commonretrypolicies</name>
@@ -19,7 +13,8 @@
 	<url>http://www.muleforge.org/projects/${shortId}</url>
 
 	<properties>
-		<muleVersion>${parent.version}</muleVersion>
+		<muleVersion>2.1.2</muleVersion>
+		<springVersion>2.5.6</springVersion>
 		<shortId>commonretrypolicies</shortId>
 		<domainName>commonretrypolicies</domainName>
 		<license.id>CPAL 1.0</license.id>
@@ -72,6 +67,16 @@
 			</extension>
 		</extensions>
 		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.5</source>
+					<target>1.5</target>
+					<encoding>UTF-8</encoding>
+				</configuration>
+			</plugin>
+
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<configuration>
@@ -190,6 +195,7 @@
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-context</artifactId>
+			<version>${springVersion}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -201,6 +207,7 @@
 		<dependency>
 			<groupId>org.apache.geronimo.specs</groupId>
 			<artifactId>geronimo-annotation_1.0_spec</artifactId>
+			<version>1.1.1</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

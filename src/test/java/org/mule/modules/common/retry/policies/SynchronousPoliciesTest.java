@@ -8,11 +8,14 @@ import javax.annotation.Resource;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mule.api.context.WorkManager;
 import org.mule.api.retry.RetryCallback;
 import org.mule.api.retry.RetryContext;
 import org.mule.api.retry.RetryPolicyTemplate;
+import org.mule.config.ChainedThreadingProfile;
 import org.mule.modules.common.retry.notifiers.RetryNotifierStub;
 import org.mule.retry.RetryPolicyExhaustedException;
+import org.mule.work.MuleWorkManager;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -53,16 +56,20 @@ public class SynchronousPoliciesTest {
     @Resource
     private RetryPolicyTemplate exhaustingRetryPolicyTemplate;
 
+    private WorkManager workManager;
+
     @Before
     public void initializeRetryNotifier() {
         foreverRetryPolicyTemplate.setNotifier(new RetryNotifierStub());
         exhaustingRetryPolicyTemplate.setNotifier(new RetryNotifierStub());
+        workManager = new MuleWorkManager(new ChainedThreadingProfile(),
+                "unit-test-wm");
     }
 
     @Test
     public void testForeverRetryPolicyTemplate() throws Exception {
-        foreverRetryPolicyTemplate
-                .execute(new EventuallySuccessfulRetryCallback(10));
+        foreverRetryPolicyTemplate.execute(
+                new EventuallySuccessfulRetryCallback(10), workManager);
 
         final RetryNotifierStub retryNotifierStub = (RetryNotifierStub) foreverRetryPolicyTemplate
                 .getNotifier();
@@ -76,8 +83,8 @@ public class SynchronousPoliciesTest {
             throws Exception {
 
         try {
-            exhaustingRetryPolicyTemplate
-                    .execute(new EventuallySuccessfulRetryCallback(10));
+            exhaustingRetryPolicyTemplate.execute(
+                    new EventuallySuccessfulRetryCallback(10), workManager);
 
             fail("Should have got a RetryPolicyExhaustedException");
         } catch (final RetryPolicyExhaustedException rpee) {
@@ -94,8 +101,8 @@ public class SynchronousPoliciesTest {
     @Test
     public void testExhaustingRetryPolicyTemplateWithSuccess() throws Exception {
 
-        exhaustingRetryPolicyTemplate
-                .execute(new EventuallySuccessfulRetryCallback(3));
+        exhaustingRetryPolicyTemplate.execute(
+                new EventuallySuccessfulRetryCallback(3), workManager);
 
         final RetryNotifierStub retryNotifierStub = (RetryNotifierStub) exhaustingRetryPolicyTemplate
                 .getNotifier();
