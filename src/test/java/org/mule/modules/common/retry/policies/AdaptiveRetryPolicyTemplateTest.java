@@ -77,10 +77,6 @@ public class AdaptiveRetryPolicyTemplateTest {
         amqBroker.waitUntilStopped();
         amqBroker = newActiveMQBroker();
 
-        System.err.println(amqBroker);
-
-        Thread.sleep(5000L);
-
         waitForFullyConnectedConnector(connector);
 
         assertJmsConnectorFullyFunctional(muleContext, connector);
@@ -136,6 +132,8 @@ public class AdaptiveRetryPolicyTemplateTest {
 
         payload = sendMessageToQueueUsingMuleClient(muleContext);
         assertEquals(payload, waitForMessageInFunctionalComponent(muleContext));
+
+        // TODO add a test that reads from the queue to exercise a requester
     }
 
     private AbstractConnector getJmsConnector(final MuleContext muleContext) {

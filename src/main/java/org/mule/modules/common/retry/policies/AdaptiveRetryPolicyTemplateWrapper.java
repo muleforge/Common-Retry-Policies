@@ -1,11 +1,6 @@
 package org.mule.modules.common.retry.policies;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -34,14 +29,10 @@ public class AdaptiveRetryPolicyTemplateWrapper implements RetryPolicyTemplate,
         MuleContextAware {
 
     private final Log logger = LogFactory.getLog(getClass());
+
     private RetryPolicyTemplate delegate;
 
     private MuleContext muleContext;
-
-    // it is cleaner to use our own executor instead of piggybacking on Mule's
-    // workmanager because javax.resource.spi.work API sucks big time compared
-    // to java.util.concurrent
-    private ExecutorService retryPolicyExecutor;
 
     private int initialAttemptTimeout = 5000;
 
@@ -52,16 +43,12 @@ public class AdaptiveRetryPolicyTemplateWrapper implements RetryPolicyTemplate,
     public RetryContext execute(final RetryCallback callback,
             final WorkManager workManager) throws Exception {
 
+        final RetryWork retryWork = new RetryWork(muleContext, workManager,
+                delegate, callback);
+
         if (muleContext.isStarted()) {
-            return doSynchronousReconnection(callback, workManager);
+            return doSynchronousReconnection(callback, retryWork);
         }
-
-        return trySynchronousThenAsynchronousConnection(callback, workManager);
-    }
-
-    private RetryContext trySynchronousThenAsynchronousConnection(
-
-    final RetryCallback callback, final WorkManager workManager) {
 
         if (logger.isDebugEnabled()) {
             logger
@@ -69,70 +56,39 @@ public class AdaptiveRetryPolicyTemplateWrapper implements RetryPolicyTemplate,
                             + callback);
         }
 
-        final Future<RetryContext> futureRetryContext = retryPolicyExecutor
-                .submit(new Callable<RetryContext>() {
-                    public RetryContext call() throws Exception {
-                        return delegate.execute(callback, workManager);
-                    }
-                });
+        workManager.scheduleWork(retryWork);
 
-        try {
-            return trySynchronousConnection(futureRetryContext);
-
-        } catch (final Exception e) {
-
-            return doAsynchronousConnection(callback, futureRetryContext, e);
-        }
-    }
-
-    private RetryContext doAsynchronousConnection(final RetryCallback callback,
-            final Future<RetryContext> futureRetryContext, final Exception e) {
-
-        logger.warn("Failed first synchronous attempt to execute: "
-                + callback.getWorkDescription(), e);
-
-        retryPolicyExecutor.execute(new FutureRetryContextObserver(muleContext,
-                futureRetryContext));
-
-        return new DefaultRetryContext(callback.getWorkDescription());
-    }
-
-    private RetryContext trySynchronousConnection(
-            final Future<RetryContext> futureRetryContext)
-            throws InterruptedException, ExecutionException, TimeoutException {
-
-        final RetryContext retryContext = futureRetryContext.get(
-                initialAttemptTimeout, TimeUnit.MILLISECONDS);
-
-        if (logger.isDebugEnabled()) {
-            logger.debug("Successful synchronous execution of callback: "
-                    + retryContext.getDescription());
-        }
-
-        return retryContext;
+        return trySynchronousConnection(callback, retryWork);
     }
 
     private RetryContext doSynchronousReconnection(
-            final RetryCallback callback, final WorkManager workManager)
-            throws Exception {
+            final RetryCallback callback, final RetryWork retryWork) {
         if (logger.isDebugEnabled()) {
-            logger.debug("Executing retry callback synchronously: " + callback);
+            logger.debug("Executing retry callback synchronously: "
+                    + callback);
         }
 
-        final RetryContext retryContext = delegate.execute(callback,
-                workManager);
+        retryWork.run();
 
-        final String retryContextDescription = retryContext.getDescription();
+        return retryWork.getRetryContextResult();
+    }
 
-        if (logger.isDebugEnabled()) {
-            logger.debug("The synchronous retry policy has returned: "
-                    + retryContextDescription);
+    private RetryContext trySynchronousConnection(final RetryCallback callback,
+            final RetryWork retryWork) throws InterruptedException {
+
+        if (retryWork.await(initialAttemptTimeout, TimeUnit.MILLISECONDS)) {
+
+            final RetryContext retryContext = retryWork.getRetryContextResult();
+
+            if (logger.isDebugEnabled()) {
+                logger.debug("Successful synchronous execution of callback: "
+                        + retryContext.getDescription());
+            }
+
+            return retryContext;
         }
 
-        RetryContextUtil.recoverConnectables(muleContext, retryContext
-                .getDescription());
-
-        return retryContext;
+        return new DefaultRetryContext(callback.getWorkDescription());
     }
 
     public RetryNotifier getNotifier() {
@@ -153,10 +109,6 @@ public class AdaptiveRetryPolicyTemplateWrapper implements RetryPolicyTemplate,
 
     public void setNotifier(final RetryNotifier retryNotifier) {
         delegate.setNotifier(retryNotifier);
-    }
-
-    public void setRetryPolicyExecutor(final ExecutorService retryPolicyExecutor) {
-        this.retryPolicyExecutor = retryPolicyExecutor;
     }
 
 }

@@ -9,11 +9,6 @@
 			http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
 
 	<spring:beans>
-		<spring:bean id="retryPolicyExecutor" class="java.util.concurrent.Executors"
-			factory-method="newFixedThreadPool">
-			<spring:constructor-arg value="10" />
-		</spring:bean>
-
 		<spring:bean id="foreverRetryPolicyTemplate" class="org.mule.modules.common.retry.policies.ForeverRetryPolicyTemplate">
 			<spring:property name="sleepTime" value="2000" />
 		</spring:bean>
@@ -21,7 +16,6 @@
 		<spring:bean id="ThreadingPolicyTemplate"
 			class="org.mule.modules.common.retry.policies.AdaptiveRetryPolicyTemplateWrapper">
 			<spring:property name="delegate" ref="foreverRetryPolicyTemplate" />
-			<spring:property name="retryPolicyExecutor" ref="retryPolicyExecutor" />
 		</spring:bean>
 	</spring:beans>
 
