@@ -28,7 +28,7 @@
 
 		<service name="TestService">
 			<inbound>
-				<jms:inbound-endpoint queue="targetQueue" connector-ref="JmsConnector" />
+				<jms:inbound-endpoint queue="listenedQueue" connector-ref="JmsConnector" />
 			</inbound>
 			<test:component enableMessageHistory="true" />
 		</service>

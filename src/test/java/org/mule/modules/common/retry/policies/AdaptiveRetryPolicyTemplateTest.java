@@ -28,7 +28,10 @@ import org.mule.transport.AbstractConnector;
  */
 public class AdaptiveRetryPolicyTemplateTest {
 
-    private static final String QUEUE_NAME = "targetQueue";
+    private static final String LISTENED_QUEUE_NAME = "listenedQueue";
+
+    private static final String REQUESTED_QUEUE_NAME = "requestedQueue";
+
     private static final String BROKER_ID = "crepol-broker";
 
     @Test
@@ -127,13 +130,26 @@ public class AdaptiveRetryPolicyTemplateTest {
 
         assertAllMessageReceiversConnected(connector);
 
-        String payload = sendMessageToQueueUsingJmsClient();
+        // test listener
+        String payload = sendMessageToQueueUsingJmsClient(LISTENED_QUEUE_NAME);
         assertEquals(payload, waitForMessageInFunctionalComponent(muleContext));
 
-        payload = sendMessageToQueueUsingMuleClient(muleContext);
+        // test dispatcher
+        payload = sendMessageToQueueUsingMuleClient(muleContext,
+                LISTENED_QUEUE_NAME);
         assertEquals(payload, waitForMessageInFunctionalComponent(muleContext));
 
-        // TODO add a test that reads from the queue to exercise a requester
+        // test requester
+        payload = sendMessageToQueueUsingJmsClient(REQUESTED_QUEUE_NAME);
+        assertEquals(payload, requestMessageFromJmsQueue(muleContext,
+                REQUESTED_QUEUE_NAME));
+    }
+
+    private Object requestMessageFromJmsQueue(final MuleContext muleContext,
+            final String queueName) throws MuleException {
+
+        return new MuleClient(muleContext).request("jms://" + queueName, 5000L)
+                .getPayload();
     }
 
     private AbstractConnector getJmsConnector(final MuleContext muleContext) {
@@ -144,11 +160,12 @@ public class AdaptiveRetryPolicyTemplateTest {
     }
 
     private String sendMessageToQueueUsingMuleClient(
-            final MuleContext muleContext) throws MuleException {
+            final MuleContext muleContext, final String queueName)
+            throws MuleException {
 
         final String payload = RandomStringUtils.randomAlphanumeric(10);
 
-        new MuleClient(muleContext).dispatch("jms://" + QUEUE_NAME, payload,
+        new MuleClient(muleContext).dispatch("jms://" + queueName, payload,
                 Collections.EMPTY_MAP);
 
         return payload;
@@ -200,7 +217,8 @@ public class AdaptiveRetryPolicyTemplateTest {
         return receivedMessagePayload;
     }
 
-    private String sendMessageToQueueUsingJmsClient() throws JMSException {
+    private String sendMessageToQueueUsingJmsClient(final String queueName)
+            throws JMSException {
         final Connection connection = new ActiveMQConnectionFactory("vm://"
                 + BROKER_ID + "?create=false").createConnection();
 
@@ -209,7 +227,7 @@ public class AdaptiveRetryPolicyTemplateTest {
 
         final String payload = RandomStringUtils.randomAlphanumeric(10);
 
-        session.createProducer(session.createQueue(QUEUE_NAME)).send(
+        session.createProducer(session.createQueue(queueName)).send(
                 session.createTextMessage(payload));
 
         connection.close();
