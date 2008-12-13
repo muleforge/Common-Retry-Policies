@@ -7,7 +7,7 @@
 	<description>The Common Retry Policies is a module containing community built and maintained
 		implementations of retry policies.</description>
 	<packaging>jar</packaging>
-	<version>1.0</version>
+	<version>1.1-SNAPSHOT</version>
 	<url>http://www.muleforge.org/projects/${shortId}</url>
 
 	<properties>
@@ -25,10 +25,9 @@
 	</issueManagement>
 
 	<scm>
-		<connection>scm:svn:http://svn.muleforge.org/commonretrypolicies/tags/commonretrypolicies-1.0</connection>
-		<developerConnection>scm:svn:https://svn.muleforge.org/commonretrypolicies/tags/commonretrypolicies-1.0</developerConnection>
-		<tag>HEAD</tag>
-		<url>http://svn.commonretrypolicies.muleforge.org/tags/commonretrypolicies-1.0</url>
+		<connection>scm:svn:http://svn.muleforge.org/commonretrypolicies/</connection>
+		<developerConnection>scm:svn:https://svn.muleforge.org/commonretrypolicies/</developerConnection>
+		<url>http://svn.commonretrypolicies.muleforge.org/</url>
 	</scm>
 
 	<ciManagement>
