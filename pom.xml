@@ -1,6 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>org.mule.modules</groupId>
@@ -9,7 +7,7 @@
 	<description>The Common Retry Policies is a module containing community built and maintained
 		implementations of retry policies.</description>
 	<packaging>jar</packaging>
-	<version>1.0-SNAPSHOT</version>
+	<version>1.0</version>
 	<url>http://www.muleforge.org/projects/${shortId}</url>
 
 	<properties>
@@ -27,14 +25,10 @@
 	</issueManagement>
 
 	<scm>
-		<connection>
-			scm:svn:http://svn.muleforge.org/${domainName}/
-		</connection>
-		<developerConnection>
-			scm:svn:https://svn.muleforge.org/${domainName}/
-		</developerConnection>
+		<connection>scm:svn:http://svn.muleforge.org/commonretrypolicies/tags/commonretrypolicies-1.0</connection>
+		<developerConnection>scm:svn:https://svn.muleforge.org/commonretrypolicies/tags/commonretrypolicies-1.0</developerConnection>
 		<tag>HEAD</tag>
-		<url>http://svn.${domainName}.muleforge.org/</url>
+		<url>http://svn.commonretrypolicies.muleforge.org/tags/commonretrypolicies-1.0</url>
 	</scm>
 
 	<ciManagement>
@@ -226,4 +220,4 @@
 			<comments>A business-friendly OSI approved license</comments>
 		</license>
 	</licenses>
-</project>		
+</project>
