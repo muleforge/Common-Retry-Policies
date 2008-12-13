@@ -6,7 +6,7 @@
 	<groupId>org.mule.modules</groupId>
 	<version>1.0</version>
 	<properties>
-		<muleVersion>1.4.1</muleVersion>
+		<muleVersion>2.1.2</muleVersion>
 	</properties>
 	<artifactId>commonretrypolicies</artifactId>
 	<!-- This should be "pom" not "jar" but if it is set to "pom", the list of dependencies gets ignored
@@ -33,13 +33,13 @@
 		<dependency>
 			<groupId>org.mule.tests</groupId>
 			<artifactId>mule-tests-functional</artifactId>
-			<version>${version}</version>
+			<version>${muleVersion}</version>
 		</dependency>
 	</dependencies>
 	<build>
 		<defaultGoal>install</defaultGoal>
 		<finalName>${artifactId}</finalName>
-		<plugins>
+		<plugins>extension
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<!--

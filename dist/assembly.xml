@@ -37,7 +37,6 @@ Assembly descriptor for the full distribution.
     <!-- Mule libraries -->
     <dependencySet>
       <outputDirectory>lib/user</outputDirectory>
-      <outputFileNameMapping>${artifactId}.${extension}</outputFileNameMapping>
       <scope>test</scope>
       <includes>
         <include>org.mule.tests:mule-tests-functional</include>
