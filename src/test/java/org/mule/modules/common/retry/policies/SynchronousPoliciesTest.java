@@ -26,8 +26,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @ContextConfiguration(locations = { "classpath:synchronous-policies-config.xml" })
 public class SynchronousPoliciesTest {
 
-    private static class EventuallySuccessfulRetryCallback implements
-            RetryCallback {
+    private static class EventuallySuccessfulRetryCallback implements RetryCallback {
 
         private final int retriesBeforeSuccess;
 
@@ -62,37 +61,31 @@ public class SynchronousPoliciesTest {
     public void initializeRetryNotifier() {
         foreverRetryPolicyTemplate.setNotifier(new RetryNotifierStub());
         exhaustingRetryPolicyTemplate.setNotifier(new RetryNotifierStub());
-        workManager = new MuleWorkManager(new ChainedThreadingProfile(),
-                "unit-test-wm");
+        workManager = new MuleWorkManager(new ChainedThreadingProfile(), "unit-test-wm", 5000);
     }
 
     @Test
     public void testForeverRetryPolicyTemplate() throws Exception {
-        foreverRetryPolicyTemplate.execute(
-                new EventuallySuccessfulRetryCallback(10), workManager);
+        foreverRetryPolicyTemplate.execute(new EventuallySuccessfulRetryCallback(10), workManager);
 
-        final RetryNotifierStub retryNotifierStub = (RetryNotifierStub) foreverRetryPolicyTemplate
-                .getNotifier();
+        final RetryNotifierStub retryNotifierStub = (RetryNotifierStub) foreverRetryPolicyTemplate.getNotifier();
 
         assertEquals(1, retryNotifierStub.getSuccessCount());
         assertEquals(10, retryNotifierStub.getFailedCount());
     }
 
     @Test
-    public void testExhaustingRetryPolicyTemplateWithoutSuccess()
-            throws Exception {
+    public void testExhaustingRetryPolicyTemplateWithoutSuccess() throws Exception {
 
         try {
-            exhaustingRetryPolicyTemplate.execute(
-                    new EventuallySuccessfulRetryCallback(10), workManager);
+            exhaustingRetryPolicyTemplate.execute(new EventuallySuccessfulRetryCallback(10), workManager);
 
             fail("Should have got a RetryPolicyExhaustedException");
         } catch (final RetryPolicyExhaustedException rpee) {
 
         }
 
-        final RetryNotifierStub retryNotifierStub = (RetryNotifierStub) exhaustingRetryPolicyTemplate
-                .getNotifier();
+        final RetryNotifierStub retryNotifierStub = (RetryNotifierStub) exhaustingRetryPolicyTemplate.getNotifier();
 
         assertEquals(0, retryNotifierStub.getSuccessCount());
         assertEquals(6, retryNotifierStub.getFailedCount());
@@ -101,11 +94,9 @@ public class SynchronousPoliciesTest {
     @Test
     public void testExhaustingRetryPolicyTemplateWithSuccess() throws Exception {
 
-        exhaustingRetryPolicyTemplate.execute(
-                new EventuallySuccessfulRetryCallback(3), workManager);
+        exhaustingRetryPolicyTemplate.execute(new EventuallySuccessfulRetryCallback(3), workManager);
 
-        final RetryNotifierStub retryNotifierStub = (RetryNotifierStub) exhaustingRetryPolicyTemplate
-                .getNotifier();
+        final RetryNotifierStub retryNotifierStub = (RetryNotifierStub) exhaustingRetryPolicyTemplate.getNotifier();
 
         assertEquals(1, retryNotifierStub.getSuccessCount());
         assertEquals(3, retryNotifierStub.getFailedCount());

@@ -12,7 +12,7 @@ public class RetryNotifierStub implements RetryNotifier {
 
     private int successCount = 0;
 
-    public void failed(final RetryContext context, final Throwable e) {
+    public void onFailure(final RetryContext context, final Throwable e) {
         failedCount++;
     }
 
@@ -20,7 +20,7 @@ public class RetryNotifierStub implements RetryNotifier {
         return failedCount;
     }
 
-    public void sucess(final RetryContext context) {
+    public void onSuccess(final RetryContext context) {
         successCount++;
     }
 
