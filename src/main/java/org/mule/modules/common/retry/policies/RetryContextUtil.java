@@ -19,12 +19,9 @@ abstract class RetryContextUtil {
         throw new UnsupportedOperationException("Do not instantiate");
     }
 
-    static void recoverConnectables(final MuleContext muleContext,
-            final String retryContextDescription) {
+    static void recoverConnectables(final MuleContext muleContext, final String retryContextDescription) {
 
-        @SuppressWarnings("unchecked")
-        final Collection<AbstractConnector> connectors = muleContext
-                .getRegistry().lookupObjects(AbstractConnector.class);
+        final Collection<AbstractConnector> connectors = muleContext.getRegistry().lookupObjects(AbstractConnector.class);
 
         for (final AbstractConnector connector : connectors) {
             if (hasConnectorBeenReconnected(retryContextDescription, connector)) {
@@ -53,18 +50,15 @@ abstract class RetryContextUtil {
         }
     }
 
-    private static void recoverMessageReceivers(
-            final AbstractConnector connector) {
-        for (final MessageReceiver messageReceiver : connector
-                .getReceivers("*")) {
+    private static void recoverMessageReceivers(final AbstractConnector connector) {
+        for (final MessageReceiver messageReceiver : connector.getReceivers("*")) {
 
             LOGGER.info("Recovering message receiver: " + messageReceiver);
 
             try {
                 messageReceiver.connect();
             } catch (final Exception e) {
-                LOGGER.error("Error when recovering message receiver: "
-                        + messageReceiver, e);
+                LOGGER.error("Error when recovering message receiver: " + messageReceiver, e);
             }
         }
     }
@@ -77,12 +71,9 @@ abstract class RetryContextUtil {
      * 
      * There must be a better way to do this.
      */
-    private static boolean hasConnectorBeenReconnected(
-            final String retryContextDescription,
-            final AbstractConnector connector) {
+    private static boolean hasConnectorBeenReconnected(final String retryContextDescription, final AbstractConnector connector) {
 
-        return retryContextDescription
-                .contains("'" + connector.getName() + "'");
+        return retryContextDescription.contains("'" + connector.getName() + "'");
     }
 
 }

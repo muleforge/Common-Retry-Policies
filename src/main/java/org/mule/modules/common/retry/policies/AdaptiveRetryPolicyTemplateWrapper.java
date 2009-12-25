@@ -32,7 +32,7 @@ public class AdaptiveRetryPolicyTemplateWrapper implements RetryPolicyTemplate, 
 
     private RetryPolicyTemplate delegate;
 
-    private Map<?, ?> metaInfo;
+    private Map<Object, Object> metaInfo;
 
     private MuleContext muleContext;
 
@@ -43,18 +43,24 @@ public class AdaptiveRetryPolicyTemplateWrapper implements RetryPolicyTemplate, 
     }
 
     public RetryContext execute(final RetryCallback callback, final WorkManager workManager) throws Exception {
-
         final RetryWork retryWork = new RetryWork(muleContext, workManager, delegate, callback);
 
         if (muleContext.isStarted()) {
             return doSynchronousReconnection(callback, retryWork);
         }
 
+        WorkManager workManagerInUse = workManager;
+
+        if (workManagerInUse == null) {
+            logger.warn("Ouch! No work manager has been provided by Mule, using the global one.");
+            workManagerInUse = muleContext.getWorkManager();
+        }
+
         if (logger.isDebugEnabled()) {
             logger.debug("Executing retry callback asynchronously: " + callback);
         }
 
-        workManager.scheduleWork(retryWork);
+        workManagerInUse.scheduleWork(retryWork);
 
         return trySynchronousConnection(callback, retryWork);
     }
@@ -83,12 +89,9 @@ public class AdaptiveRetryPolicyTemplateWrapper implements RetryPolicyTemplate, 
             return retryContext;
         }
 
-        final DefaultRetryContext defaultRetryContext = new DefaultRetryContext(callback.getWorkDescription());
-        defaultRetryContext.setMuleContext(muleContext);
+        final DefaultRetryContext defaultRetryContext = new DefaultRetryContext(callback.getWorkDescription(), metaInfo);
 
-        if (metaInfo != null) {
-            defaultRetryContext.setMetaInfo(metaInfo);
-        }
+        defaultRetryContext.setMuleContext(muleContext);
 
         return defaultRetryContext;
     }
