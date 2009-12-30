@@ -12,20 +12,20 @@ public class RetryNotifierStub implements RetryNotifier {
 
     private int successCount = 0;
 
-    public void failed(final RetryContext context, final Throwable e) {
-        failedCount++;
-    }
-
     public int getFailedCount() {
         return failedCount;
     }
 
-    public void sucess(final RetryContext context) {
-        successCount++;
-    }
-
     public int getSuccessCount() {
         return successCount;
+    }
+
+    public void onFailure(final RetryContext context, final Throwable e) {
+        failedCount++;
+    }
+
+    public void onSuccess(final RetryContext context) {
+        successCount++;
     }
 
 }

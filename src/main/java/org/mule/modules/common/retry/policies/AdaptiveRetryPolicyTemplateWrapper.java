@@ -1,5 +1,6 @@
 package org.mule.modules.common.retry.policies;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.Log;
@@ -25,8 +26,7 @@ import org.mule.retry.DefaultRetryContext;
  * 
  * @author David Dossot (david@dossot.net)
  */
-public class AdaptiveRetryPolicyTemplateWrapper implements RetryPolicyTemplate,
-        MuleContextAware {
+public class AdaptiveRetryPolicyTemplateWrapper implements RetryPolicyTemplate, MuleContextAware {
 
     private final Log logger = LogFactory.getLog(getClass());
 
@@ -34,26 +34,25 @@ public class AdaptiveRetryPolicyTemplateWrapper implements RetryPolicyTemplate,
 
     private MuleContext muleContext;
 
+    @SuppressWarnings("unchecked")
+    private Map metaInfo;
+
     private int initialAttemptTimeout = 5000;
 
     public RetryPolicy createRetryInstance() {
         return delegate.createRetryInstance();
     }
 
-    public RetryContext execute(final RetryCallback callback,
-            final WorkManager workManager) throws Exception {
+    public RetryContext execute(final RetryCallback callback, final WorkManager workManager) throws Exception {
 
-        final RetryWork retryWork = new RetryWork(muleContext, workManager,
-                delegate, callback);
+        final RetryWork retryWork = new RetryWork(muleContext, workManager, delegate, callback);
 
         if (muleContext.isStarted()) {
             return doSynchronousReconnection(callback, retryWork);
         }
 
         if (logger.isDebugEnabled()) {
-            logger
-                    .debug("Executing retry callback asynchronously: "
-                            + callback);
+            logger.debug("Executing retry callback asynchronously: " + callback);
         }
 
         workManager.scheduleWork(retryWork);
@@ -61,11 +60,9 @@ public class AdaptiveRetryPolicyTemplateWrapper implements RetryPolicyTemplate,
         return trySynchronousConnection(callback, retryWork);
     }
 
-    private RetryContext doSynchronousReconnection(
-            final RetryCallback callback, final RetryWork retryWork) {
+    private RetryContext doSynchronousReconnection(final RetryCallback callback, final RetryWork retryWork) {
         if (logger.isDebugEnabled()) {
-            logger.debug("Executing retry callback synchronously: "
-                    + callback);
+            logger.debug("Executing retry callback synchronously: " + callback);
         }
 
         retryWork.run();
@@ -73,16 +70,15 @@ public class AdaptiveRetryPolicyTemplateWrapper implements RetryPolicyTemplate,
         return retryWork.getRetryContextResult();
     }
 
-    private RetryContext trySynchronousConnection(final RetryCallback callback,
-            final RetryWork retryWork) throws InterruptedException {
+    private RetryContext trySynchronousConnection(final RetryCallback callback, final RetryWork retryWork)
+            throws InterruptedException {
 
         if (retryWork.await(initialAttemptTimeout, TimeUnit.MILLISECONDS)) {
 
             final RetryContext retryContext = retryWork.getRetryContextResult();
 
             if (logger.isDebugEnabled()) {
-                logger.debug("Successful synchronous execution of callback: "
-                        + retryContext.getDescription());
+                logger.debug("Successful synchronous execution of callback: " + retryContext.getDescription());
             }
 
             return retryContext;
@@ -109,6 +105,16 @@ public class AdaptiveRetryPolicyTemplateWrapper implements RetryPolicyTemplate,
 
     public void setNotifier(final RetryNotifier retryNotifier) {
         delegate.setNotifier(retryNotifier);
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map getMetaInfo() {
+        return metaInfo;
+    }
+
+    @SuppressWarnings("unchecked")
+    public void setMetaInfo(final Map metaInfo) {
+        this.metaInfo = metaInfo;
     }
 
 }
