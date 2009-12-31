@@ -19,6 +19,12 @@ public class ForeverRetryPolicy implements RetryPolicy {
     }
 
     public PolicyStatus applyPolicy(final Throwable throwable) {
+        // special case :( catch JMS connector issues and consider connector
+        // dead if occurred
+        if ((throwable instanceof IllegalStateException) && ("Deque full".equals(throwable.getMessage()))) {
+            return PolicyStatus.policyExhausted(throwable);
+        }
+
         try {
             Thread.sleep(sleepTime);
             return PolicyStatus.policyOk();

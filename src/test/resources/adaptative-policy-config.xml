@@ -1,38 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<mule xmlns="http://www.mulesource.org/schema/mule/core/2.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xmlns:jms="http://www.mulesource.org/schema/mule/jms/2.1" xmlns:test="http://www.mulesource.org/schema/mule/test/2.1"
-	xmlns:spring="http://www.springframework.org/schema/beans"
-	xsi:schemaLocation="
-			http://www.mulesource.org/schema/mule/core/2.1 http://www.mulesource.org/schema/mule/core/2.1/mule.xsd
-			http://www.mulesource.org/schema/mule/jms/2.1 http://www.mulesource.org/schema/mule/jms/2.1/mule-jms.xsd
-			http://www.mulesource.org/schema/mule/test/2.1 http://www.mulesource.org/schema/mule/test/2.1/mule-test.xsd
+<mule xmlns="http://www.mulesource.org/schema/mule/core/2.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:jms="http://www.mulesource.org/schema/mule/jms/2.2" xmlns:test="http://www.mulesource.org/schema/mule/test/2.2"
+  xmlns:spring="http://www.springframework.org/schema/beans"
+  xsi:schemaLocation="
+			http://www.mulesource.org/schema/mule/core/2.2 http://www.mulesource.org/schema/mule/core/2.2/mule.xsd
+			http://www.mulesource.org/schema/mule/jms/2.2 http://www.mulesource.org/schema/mule/jms/2.2/mule-jms.xsd
+			http://www.mulesource.org/schema/mule/test/2.2 http://www.mulesource.org/schema/mule/test/2.2/mule-test.xsd
 			http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
 
-	<spring:beans>
-		<spring:bean id="foreverRetryPolicyTemplate" class="org.mule.modules.common.retry.policies.ForeverRetryPolicyTemplate">
-			<spring:property name="sleepTime" value="2000" />
-		</spring:bean>
+  <spring:beans>
+    <spring:bean id="foreverRetryPolicyTemplate" class="org.mule.modules.common.retry.policies.ForeverRetryPolicyTemplate">
+      <spring:property name="sleepTime" value="2000" />
+    </spring:bean>
 
-		<spring:bean id="ThreadingPolicyTemplate"
-			class="org.mule.modules.common.retry.policies.AdaptiveRetryPolicyTemplateWrapper">
-			<spring:property name="delegate" ref="foreverRetryPolicyTemplate" />
-		</spring:bean>
-	</spring:beans>
+    <spring:bean id="ThreadingPolicyTemplate" class="org.mule.modules.common.retry.policies.AdaptiveRetryPolicyTemplateWrapper">
+      <spring:property name="delegate" ref="foreverRetryPolicyTemplate" />
+    </spring:bean>
+  </spring:beans>
 
+  <jms:activemq-connector name="JmsConnector" disableTemporaryReplyToDestinations="true"
+    brokerURL="tcp://localhost:36036" specification="1.1">
+    <spring:property name="retryPolicyTemplate" ref="ThreadingPolicyTemplate" />
+  </jms:activemq-connector>
 
-	<jms:activemq-connector name="JmsConnector" brokerURL="vm://crepol-broker?create=false" specification="1.1">
-		<spring:property name="retryPolicyTemplate" ref="ThreadingPolicyTemplate" />
-	</jms:activemq-connector>
+  <model name="TestAdaptiveRetryPolicyTemplate">
 
-	<model name="TestAdaptiveRetryPolicyTemplate">
+    <service name="TestService">
+      <inbound>
+        <jms:inbound-endpoint queue="listenedQueue" connector-ref="JmsConnector" />
+      </inbound>
+      <test:component enableMessageHistory="true" />
+    </service>
 
-		<service name="TestService">
-			<inbound>
-				<jms:inbound-endpoint queue="listenedQueue" connector-ref="JmsConnector" />
-			</inbound>
-			<test:component enableMessageHistory="true" />
-		</service>
-
-	</model>
+  </model>
 
 </mule>
