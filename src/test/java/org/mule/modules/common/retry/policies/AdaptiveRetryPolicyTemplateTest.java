@@ -13,7 +13,8 @@ import javax.jms.Session;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.broker.BrokerService;
 import org.apache.commons.lang.RandomStringUtils;
-import org.junit.Ignore;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.junit.Test;
 import org.mule.api.MuleContext;
 import org.mule.api.MuleException;
@@ -27,9 +28,9 @@ import org.mule.transport.AbstractConnector;
 /**
  * @author David Dossot (david@dossot.net)
  */
-// FIXME re-activate test
-@Ignore
 public class AdaptiveRetryPolicyTemplateTest {
+
+    private static final Log LOGGER = LogFactory.getLog(AdaptiveRetryPolicyTemplateTest.class);
 
     private static final String LISTENED_QUEUE_NAME = "listenedQueue";
 
@@ -48,6 +49,7 @@ public class AdaptiveRetryPolicyTemplateTest {
 
         muleContext.dispose();
         amqBroker.stop();
+        amqBroker.waitUntilStopped();
     }
 
     @Test
@@ -62,11 +64,11 @@ public class AdaptiveRetryPolicyTemplateTest {
         final BrokerService amqBroker = newActiveMQBroker();
 
         waitForFullyConnectedConnector(connector);
-
         assertJmsConnectorFullyFunctional(muleContext, connector);
 
         muleContext.dispose();
         amqBroker.stop();
+        amqBroker.waitUntilStopped();
     }
 
     @Test
@@ -88,19 +90,17 @@ public class AdaptiveRetryPolicyTemplateTest {
 
         muleContext.dispose();
         amqBroker.stop();
+        amqBroker.waitUntilStopped();
     }
 
     private void waitForFullyConnectedConnector(final AbstractConnector connector) throws InterruptedException {
-
         int i = 0;
-
         while ((!isConnectorAndItsReceiversConnected(connector)) && (i++ < 60)) {
             Thread.sleep(500L);
         }
     }
 
     private boolean isConnectorAndItsReceiversConnected(final AbstractConnector connector) {
-
         if (!connector.isStarted()) {
             return false;
         }
@@ -110,7 +110,6 @@ public class AdaptiveRetryPolicyTemplateTest {
         }
 
         for (final MessageReceiver messageReceiver : connector.getReceivers("*")) {
-
             if (!messageReceiver.isConnected()) {
                 return false;
             }
@@ -141,13 +140,11 @@ public class AdaptiveRetryPolicyTemplateTest {
     }
 
     private Object requestMessageFromJmsQueue(final MuleContext muleContext, final String queueName) throws MuleException {
-
         return new MuleClient(muleContext).request("jms://" + queueName, 5000L).getPayload();
     }
 
     private AbstractConnector getJmsConnector(final MuleContext muleContext) {
         final AbstractConnector connector = (AbstractConnector) muleContext.getRegistry().lookupConnector("JmsConnector");
-
         return connector;
     }
 
@@ -155,30 +152,25 @@ public class AdaptiveRetryPolicyTemplateTest {
             throws MuleException {
 
         final String payload = RandomStringUtils.randomAlphanumeric(10);
-
         new MuleClient(muleContext).dispatch("jms://" + queueName, payload, Collections.EMPTY_MAP);
-
+        LOGGER.info("\n\nDispatched JMS message with payload: " + payload + "\n");
         return payload;
     }
 
     private void assertAllMessageReceiversConnected(final AbstractConnector connector) {
-
         for (final MessageReceiver messageReceiver : connector.getReceivers("*")) {
-
             assertTrue(messageReceiver.getReceiverKey() + " connected", messageReceiver.isConnected());
         }
     }
 
     private MuleContext newMuleServer() throws Exception {
         final MuleContext muleContext = new DefaultMuleContextFactory().createMuleContext("adaptative-policy-config.xml");
-
         muleContext.start();
-
+        LOGGER.info("\n\nMule server started: " + muleContext.getConfiguration().getId() + "\n");
         return muleContext;
     }
 
     private Object waitForMessageInFunctionalComponent(final MuleContext muleContext) throws Exception, InterruptedException {
-
         final DefaultJavaComponent defaultComponent = (DefaultJavaComponent) muleContext.getRegistry().lookupService(
                 "TestService").getComponent();
 
@@ -192,24 +184,18 @@ public class AdaptiveRetryPolicyTemplateTest {
         }
 
         assertEquals(1, testComponent.getReceivedMessagesCount());
-
         final Object receivedMessagePayload = testComponent.getReceivedMessage(1);
-
         testComponent.initialise();
-
         return receivedMessagePayload;
     }
 
     private String sendMessageToQueueUsingJmsClient(final String queueName) throws JMSException {
-        final Connection connection = new ActiveMQConnectionFactory("vm://" + BROKER_ID + "?create=false").createConnection();
-
+        final Connection connection = new ActiveMQConnectionFactory("tcp://localhost:36036").createConnection();
         final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-
         final String payload = RandomStringUtils.randomAlphanumeric(10);
-
         session.createProducer(session.createQueue(queueName)).send(session.createTextMessage(payload));
-
         connection.close();
+        LOGGER.info("\n\nSent JMS message with payload: " + payload + "\n");
         return payload;
     }
 
@@ -220,7 +206,9 @@ public class AdaptiveRetryPolicyTemplateTest {
         amqBroker.setUseShutdownHook(false);
         amqBroker.setDeleteAllMessagesOnStartup(true);
         amqBroker.setBrokerName(BROKER_ID);
+        amqBroker.addConnector("tcp://localhost:36036");
         amqBroker.start();
+        LOGGER.info("\n\nStarted AMG broker: " + BROKER_ID + "\n");
         return amqBroker;
     }
 }

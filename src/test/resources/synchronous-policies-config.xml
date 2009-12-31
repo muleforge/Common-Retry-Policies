@@ -6,7 +6,6 @@
 	<bean id="foreverRetryPolicyTemplate" class="org.mule.modules.common.retry.policies.ForeverRetryPolicyTemplate"
 		p:sleepTime="1" />
 
-
 	<bean id="exhaustingRetryPolicyTemplate" class="org.mule.modules.common.retry.policies.ExhaustingRetryPolicyTemplate"
 		p:sleepTime="1" p:retryLimit="5" />
 

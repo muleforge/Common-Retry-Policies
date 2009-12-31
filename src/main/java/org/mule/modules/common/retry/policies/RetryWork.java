@@ -36,8 +36,7 @@ class RetryWork implements Work {
 
     private final RetryCallback retryCallback;
 
-    RetryWork(final MuleContext muleContext, final WorkManager workManager,
-            final RetryPolicyTemplate retryPolicyTemplate,
+    RetryWork(final MuleContext muleContext, final WorkManager workManager, final RetryPolicyTemplate retryPolicyTemplate,
             final RetryCallback retryCallback) {
 
         this.muleContext = muleContext;
@@ -46,11 +45,9 @@ class RetryWork implements Work {
         this.retryCallback = retryCallback;
     }
 
-    public boolean await(final long timeout, final TimeUnit unit)
-            throws InterruptedException {
+    public boolean await(final long timeout, final TimeUnit unit) throws InterruptedException {
 
-        final boolean workCompletedWhileWaiting = workDoneLatch.await(timeout,
-                unit);
+        final boolean workCompletedWhileWaiting = workDoneLatch.await(timeout, unit);
 
         if (workCompletedWhileWaiting) {
             forceReconnection.set(false);
@@ -65,24 +62,20 @@ class RetryWork implements Work {
 
     public void run() {
         try {
-            final RetryContext retryContext = retryPolicyTemplate.execute(
-                    retryCallback, workManager);
+            final RetryContext retryContext = retryPolicyTemplate.execute(retryCallback, workManager);
 
             retryContextReference.set(retryContext);
 
             workDoneLatch.countDown();
 
-            final String retryContextDescription = retryContext
-                    .getDescription();
+            final String retryContextDescription = retryContext.getDescription();
 
             if (logger.isDebugEnabled()) {
-                logger.debug("The retry policy has returned: " + retryContext
-                        + " (" + retryContextDescription + ")");
+                logger.debug("The retry policy has returned: " + retryContext + " (" + retryContextDescription + ")");
             }
 
             if (forceReconnection.get()) {
-                RetryContextUtil.recoverConnectables(muleContext,
-                        retryContextDescription);
+                RetryContextUtil.recoverConnectables(muleContext, retryContextDescription);
             }
 
         } catch (final InterruptedException ie) {
