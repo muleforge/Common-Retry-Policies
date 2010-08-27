@@ -11,8 +11,8 @@
 	<url>http://www.muleforge.org/projects/${shortId}</url>
 
 	<properties>
-		<muleVersion>3.0.0-M2-SNAPSHOT</muleVersion>
-		<springVersion>2.5.6</springVersion>
+		<muleVersion>3.0.0-RC2-SNAPSHOT</muleVersion>
+		<springVersion>3.0.3.RELEASE</springVersion>
 		<shortId>commonretrypolicies</shortId>
 		<domainName>commonretrypolicies</domainName>
 		<license.id>CPAL 1.0</license.id>
@@ -182,7 +182,7 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.4</version>
+			<version>4.7</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -205,7 +205,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.apache.activemq</groupId>
-			<version>5.2.0</version>
+			<version>5.4.0</version>
 			<artifactId>activemq-core</artifactId>
 			<scope>test</scope>
 		</dependency>
