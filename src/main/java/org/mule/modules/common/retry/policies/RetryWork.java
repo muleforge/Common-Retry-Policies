@@ -1,8 +1,6 @@
+
 package org.mule.modules.common.retry.policies;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.resource.spi.work.Work;
@@ -18,12 +16,8 @@ import org.mule.api.retry.RetryPolicyTemplate;
 /**
  * @author David Dossot (david@dossot.net)
  */
-class RetryWork implements Work {
-
-    private final CountDownLatch workDoneLatch = new CountDownLatch(1);
-
-    private final AtomicBoolean forceReconnection = new AtomicBoolean(true);
-
+class RetryWork implements Work
+{
     private final AtomicReference<RetryContext> retryContextReference = new AtomicReference<RetryContext>();
 
     private final Log logger = LogFactory.getLog(getClass());
@@ -36,9 +30,13 @@ class RetryWork implements Work {
 
     private final RetryCallback retryCallback;
 
-    RetryWork(final MuleContext muleContext, final WorkManager workManager,
-            final RetryPolicyTemplate retryPolicyTemplate,
-            final RetryCallback retryCallback) {
+    private boolean mustRecoverConnectables = false;
+
+    RetryWork(final MuleContext muleContext,
+              final WorkManager workManager,
+              final RetryPolicyTemplate retryPolicyTemplate,
+              final RetryCallback retryCallback)
+    {
 
         this.muleContext = muleContext;
         this.workManager = workManager;
@@ -46,60 +44,51 @@ class RetryWork implements Work {
         this.retryCallback = retryCallback;
     }
 
-    public boolean await(final long timeout, final TimeUnit unit)
-            throws InterruptedException {
-
-        final boolean workCompletedWhileWaiting = workDoneLatch.await(timeout,
-                unit);
-
-        if (workCompletedWhileWaiting) {
-            forceReconnection.set(false);
-        }
-
-        return workCompletedWhileWaiting;
-    }
-
-    public RetryContext getRetryContextResult() {
+    public RetryContext getRetryContextResult()
+    {
         return retryContextReference.get();
     }
 
-    public void run() {
-        try {
-            final RetryContext retryContext = retryPolicyTemplate.execute(
-                    retryCallback, workManager);
+    public void run()
+    {
+        try
+        {
+            final RetryContext retryContext = retryPolicyTemplate.execute(retryCallback, workManager);
 
             retryContextReference.set(retryContext);
 
-            workDoneLatch.countDown();
-
-            final String retryContextDescription = retryContext
-                    .getDescription();
-
-            if (logger.isDebugEnabled()) {
-                logger.debug("The retry policy has returned: " + retryContext
-                        + " (" + retryContextDescription + ")");
+            if (logger.isDebugEnabled())
+            {
+                logger.debug("The retry policy has returned: " + retryContext + " ("
+                             + retryContext.getDescription() + ")");
             }
 
-            if (forceReconnection.get()) {
-                RetryContextUtil.recoverConnectables(muleContext,
-                        retryContextDescription);
+            if (mustRecoverConnectables)
+            {
+                RetryContextUtil.recoverConnectables(muleContext, retryContext);
             }
-
-        } catch (final InterruptedException ie) {
+        }
+        catch (final InterruptedException ie)
+        {
             // restore interrupted state
             Thread.currentThread().interrupt();
-        } catch (final Exception e) {
+        }
+        catch (final Exception e)
+        {
             logger.error("The asynchronous retry policy has failed!", e);
         }
 
     }
 
-    public void release() {
+    public void release()
+    {
         // TODO use a meta info in the retryContext to signal the policy it
         // should stop
+    }
 
-        // we free up a potential waiter
-        workDoneLatch.countDown();
+    public void setMustRecoverConnectables(boolean b)
+    {
+        mustRecoverConnectables = b;
     }
 
 }
