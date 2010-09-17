@@ -11,7 +11,7 @@
 	<url>http://www.muleforge.org/projects/${shortId}</url>
 
 	<properties>
-		<muleVersion>3.0.0-RC2-SNAPSHOT</muleVersion>
+		<muleVersion>3.0.0</muleVersion>
 		<springVersion>3.0.3.RELEASE</springVersion>
 		<shortId>commonretrypolicies</shortId>
 		<domainName>commonretrypolicies</domainName>
