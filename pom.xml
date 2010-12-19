@@ -160,6 +160,7 @@
 			<groupId>org.mule</groupId>
 			<artifactId>mule-core</artifactId>
 			<version>${muleVersion}</version>
+            <scope>provided</scope>
 		</dependency>
 		<!-- Test dependencies -->
 		<dependency>
